@@ -1,3 +1,26 @@
+
+using HoneyRaesAPI.Models;
+List<Customer> customers = new List<Customer>
+{
+    new Customer { Id = 1, Name = "Mark", Address = "520 lyndenbury Drive" },
+    new Customer { Id = 2, Name = "Alexis", Address = "4908 Rollingwood Drive" },
+    new Customer { Id = 3, Name = "Kilo", Address = "1337 Stinky lane" }
+};
+List<Employee> employees = new List<Employee> 
+{
+    new Employee { Id = 1, Name = "John", Specialty = "he fast" },
+    new Employee { Id = 2, Name = "Bobbi", Specialty = "she strong" }
+};
+List<ServiceTicket> serviceTickets = new List<ServiceTicket> 
+{
+    new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 1, Description = "Help Mark go fast", Emergency = false },
+    new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 2, Description = "help Alexis get strong", Emergency = true, DateComplete = "04/17/1998"},
+    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = "02/11/1998"},
+    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = "02/11/1998"},
+    new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 1, Description = "help Alexis go fast", Emergency = false, DateComplete = "02/19/1998"},
+    new ServiceTicket { Id = 5, CustomerId = 3, Description = "help Kilo not be stinky", Emergency = true, DateComplete = "09/28/1999"}
+};
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,34 +39,46 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+//ServiceTickets GETs
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/servicetickets", () =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    return serviceTickets;
+});
 
-app.MapGet("/hello", () =>
+app.MapGet("/servicetickets/{id}", (int id) =>
 {
-    return "hello";
+    return serviceTickets.First(st => st.Id == id);
+});
+
+//emplyee GETs
+//emplyee GETs
+
+app.MapGet("/employees/{id}", (int id) =>
+{
+    Employee employee = employees.FirstOrDefault(e => e.Id == id);
+    if (employee == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(employee);
+});
+
+app.MapGet("/employee/{id}", (int id) =>
+{
+    return employees.FirstOrDefault(e => e.Id == id);
+});
+
+//Customer GETs
+
+app.MapGet("/customer", () =>
+{
+    return customers;
+});
+
+app.MapGet("/customer/{id}", (int id) =>
+{
+    return customers.First(c => c.Id == id);
 });
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
