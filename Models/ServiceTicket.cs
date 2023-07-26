@@ -1,7 +1,7 @@
 namespace HoneyRaesAPI.Models;
 public class ServiceTicket
 {
-    public string Id { get; set; }
+    public int Id { get; set; }
 
     public int CustomerId { get; set; }
 
@@ -11,5 +11,5 @@ public class ServiceTicket
 
     public bool Emergency { get; set; }
 
-    public int DateComplete { get; set; }
+    public string DateComplete { get; set; }
 }
