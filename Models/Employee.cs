@@ -6,4 +6,6 @@ public class Employee
     public string Name { get; set; }
 
     public string Specialty { get; set; }
+
+    public List<ServiceTicket> ServiceTickets { get; set; }
 }

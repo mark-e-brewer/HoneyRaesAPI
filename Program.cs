@@ -1,5 +1,6 @@
 
 using HoneyRaesAPI.Models;
+using System;
 List<Customer> customers = new List<Customer>
 {
     new Customer { Id = 1, Name = "Mark", Address = "520 lyndenbury Drive" },
@@ -15,7 +16,6 @@ List<ServiceTicket> serviceTickets = new List<ServiceTicket>
 {
     new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 1, Description = "Help Mark go fast", Emergency = false },
     new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 2, Description = "help Alexis get strong", Emergency = true, DateComplete = "04/17/1998"},
-    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = "02/11/1998"},
     new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = "02/11/1998"},
     new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 1, Description = "help Alexis go fast", Emergency = false, DateComplete = "02/19/1998"},
     new ServiceTicket { Id = 5, CustomerId = 3, Description = "help Kilo not be stinky", Emergency = true, DateComplete = "09/28/1999"}
@@ -48,17 +48,17 @@ app.MapGet("/servicetickets", () =>
 
 app.MapGet("/servicetickets/{id}", (int id) =>
 {
-    ServiceTicket serviceTicket = serviceTickets.FirstOrDefault(s => s.Id == id);
+    ServiceTicket serviceTicket = serviceTickets.FirstOrDefault(st => st.Id == id);
     if (serviceTicket == null)
     {
         return Results.NotFound();
     }
+    serviceTicket.Employee = employees.FirstOrDefault(e => e.Id == serviceTicket.EmployeeId);
+    serviceTicket.Customer = customers.FirstOrDefault(c => c.Id == serviceTicket.CustomerId);
     return Results.Ok(serviceTicket);
 });
 
 //emplyee GETs
-//emplyee GETs
-
 app.MapGet("/employees/{id}", (int id) =>
 {
     Employee employee = employees.FirstOrDefault(e => e.Id == id);
@@ -66,6 +66,7 @@ app.MapGet("/employees/{id}", (int id) =>
     {
         return Results.NotFound();
     }
+    employee.ServiceTickets = serviceTickets.Where(st => st.EmployeeId == id).ToList();
     return Results.Ok(employee);
 });
 
@@ -88,7 +89,18 @@ app.MapGet("/customer/{id}", (int id) =>
     {
         return Results.NotFound();
     }
+    customer.ServiceTickets = serviceTickets.Where(st => st.CustomerId == id).ToList();
     return Results.Ok(customer);
+});
+
+app.MapGet("/emergencytickets", () =>
+{
+    IEnumerable<ServiceTicket> emergencyTickets = serviceTickets.Where(st => st.Emergency == true);
+    if (!emergencyTickets.Any())
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(emergencyTickets);
 });
 
 app.Run();
