@@ -48,7 +48,12 @@ app.MapGet("/servicetickets", () =>
 
 app.MapGet("/servicetickets/{id}", (int id) =>
 {
-    return serviceTickets.First(st => st.Id == id);
+    ServiceTicket serviceTicket = serviceTickets.FirstOrDefault(s => s.Id == id);
+    if (serviceTicket == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(serviceTicket);
 });
 
 //emplyee GETs
@@ -78,7 +83,12 @@ app.MapGet("/customer", () =>
 
 app.MapGet("/customer/{id}", (int id) =>
 {
-    return customers.First(c => c.Id == id);
+    Customer customer = customers.FirstOrDefault(c => c.Id == id);
+    if (customer == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(customer);
 });
 
 app.Run();
