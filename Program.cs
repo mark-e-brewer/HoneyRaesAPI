@@ -103,5 +103,4 @@ app.MapGet("/emergencytickets", () =>
     return Results.Ok(emergencyTickets);
 });
 
-
 app.Run();
