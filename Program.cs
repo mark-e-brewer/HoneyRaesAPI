@@ -1,6 +1,7 @@
 
 using HoneyRaesAPI.Models;
 using System;
+using System.Linq;
 List<Customer> customers = new List<Customer>
 {
     new Customer { Id = 1, Name = "Mark", Address = "520 lyndenbury Drive" },
@@ -77,6 +78,17 @@ app.MapGet("/employee/{id}", (int id) =>
     return employees.FirstOrDefault(e => e.Id == id);
 });
 
+// Service Ticket DELETE
+
+app.MapDelete("/serviceticketdelete/{id}", (int id) =>
+ {
+    ServiceTicket ticketToDelete = serviceTickets.FirstOrDefault(st => st.Id == id);
+    if (ticketToDelete != null)
+    {
+        serviceTickets.Remove(ticketToDelete);
+    }
+ });
+
 //Customer GETs
 
 app.MapGet("/customer", () =>
@@ -114,5 +126,7 @@ app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
     serviceTickets.Add(serviceTicket);
     return serviceTicket;
 });
+
+
 
 app.Run();
