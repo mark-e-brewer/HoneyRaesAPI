@@ -7,11 +7,13 @@ List<Customer> customers = new List<Customer>
     new Customer { Id = 2, Name = "Alexis", Address = "4908 Rollingwood Drive" },
     new Customer { Id = 3, Name = "Kilo", Address = "1337 Stinky lane" }
 };
+
 List<Employee> employees = new List<Employee> 
 {
     new Employee { Id = 1, Name = "John", Specialty = "he fast" },
     new Employee { Id = 2, Name = "Bobbi", Specialty = "she strong" }
 };
+
 List<ServiceTicket> serviceTickets = new List<ServiceTicket> 
 {
     new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 1, Description = "Help Mark go fast", Emergency = false },
@@ -101,6 +103,16 @@ app.MapGet("/emergencytickets", () =>
         return Results.NotFound();
     }
     return Results.Ok(emergencyTickets);
+});
+
+// Service Ticket POST
+
+app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
+{
+    // creates a new id (When we get to it later, our SQL database will do this for us like JSON Server did!)
+    serviceTicket.Id = serviceTickets.Max(st => st.Id) + 1;
+    serviceTickets.Add(serviceTicket);
+    return serviceTicket;
 });
 
 app.Run();
