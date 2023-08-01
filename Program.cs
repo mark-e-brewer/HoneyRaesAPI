@@ -78,17 +78,6 @@ app.MapGet("/employee/{id}", (int id) =>
     return employees.FirstOrDefault(e => e.Id == id);
 });
 
-// Service Ticket DELETE
-
-app.MapDelete("/serviceticketdelete/{id}", (int id) =>
- {
-    ServiceTicket ticketToDelete = serviceTickets.FirstOrDefault(st => st.Id == id);
-    if (ticketToDelete != null)
-    {
-        serviceTickets.Remove(ticketToDelete);
-    }
- });
-
 //Customer GETs
 
 app.MapGet("/customer", () =>
@@ -127,6 +116,34 @@ app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
     return serviceTicket;
 });
 
+// Service Ticket DELETE
 
+app.MapDelete("/serviceticketdelete/{id}", (int id) =>
+ {
+    ServiceTicket ticketToDelete = serviceTickets.FirstOrDefault(st => st.Id == id);
+    if (ticketToDelete != null)
+    {
+        serviceTickets.Remove(ticketToDelete);
+    }
+ });
+
+// UPDATE Service Ticket
+
+app.MapPut("/servicetickets/{id}", (int id, ServiceTicket serviceTicket) =>
+{
+    ServiceTicket ticketToUpdate = serviceTickets.FirstOrDefault(st => st.Id == id);
+    int ticketIndex = serviceTickets.IndexOf(ticketToUpdate);
+    if (ticketToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+    //the id in the request route doesn't match the id from the ticket in the request body. That's a bad request!
+    if (id != serviceTicket.Id)
+    {
+        return Results.BadRequest();
+    }
+    serviceTickets[ticketIndex] = serviceTicket;
+    return Results.Ok();
+});
 
 app.Run();
