@@ -1,12 +1,18 @@
 
 using HoneyRaesAPI.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 List<Customer> customers = new List<Customer>
 {
     new Customer { Id = 1, Name = "Mark", Address = "520 lyndenbury Drive" },
-    new Customer { Id = 2, Name = "Alexis", Address = "4908 Rollingwood Drive" },
-    new Customer { Id = 3, Name = "Kilo", Address = "1337 Stinky lane" }
+    new Customer { Id = 2, Name = "Alexis ", Address = "4908 Rollingwood Drive" },
+    new Customer { Id = 3, Name = "Kilo Bear", Address = "1337 Stinky lane" }
 };
 
 List<Employee> employees = new List<Employee> 
@@ -18,10 +24,10 @@ List<Employee> employees = new List<Employee>
 List<ServiceTicket> serviceTickets = new List<ServiceTicket> 
 {
     new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 1, Description = "Help Mark go fast", Emergency = false },
-    new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 2, Description = "help Alexis get strong", Emergency = true, DateComplete = "04/17/1998"},
-    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = "02/11/1998"},
-    new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 1, Description = "help Alexis go fast", Emergency = false, DateComplete = "02/19/1998"},
-    new ServiceTicket { Id = 5, CustomerId = 3, Description = "help Kilo not be stinky", Emergency = true, DateComplete = "09/28/1999"}
+    new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 2, Description = "help Alexis get strong", Emergency = true, DateComplete = DateTime.Today.AddYears(-2)},
+    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = DateTime.Today.AddYears(-2)},
+    new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 1, Description = "help Alexis go fast", Emergency = false, DateComplete = DateTime.Today},
+    new ServiceTicket { Id = 5, CustomerId = 3, Description = "help Kilo not be stinky", Emergency = true, DateComplete = DateTime.Today}
 };
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,8 +48,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//ServiceTickets GETs
-
 app.MapGet("/servicetickets", () =>
 {
     return serviceTickets;
@@ -61,7 +65,6 @@ app.MapGet("/servicetickets/{id}", (int id) =>
     return Results.Ok(serviceTicket);
 });
 
-//emplyee GETs
 app.MapGet("/employees/{id}", (int id) =>
 {
     Employee employee = employees.FirstOrDefault(e => e.Id == id);
@@ -96,18 +99,6 @@ app.MapGet("/customer/{id}", (int id) =>
     return Results.Ok(customer);
 });
 
-app.MapGet("/emergencytickets", () =>
-{
-    IEnumerable<ServiceTicket> emergencyTickets = serviceTickets.Where(st => st.Emergency == true);
-    if (!emergencyTickets.Any())
-    {
-        return Results.NotFound();
-    }
-    return Results.Ok(emergencyTickets);
-});
-
-// Service Ticket POST
-
 app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
 {
     // creates a new id (When we get to it later, our SQL database will do this for us like JSON Server did!)
@@ -116,18 +107,14 @@ app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
     return serviceTicket;
 });
 
-// Service Ticket DELETE
-
-app.MapDelete("/serviceticketdelete/{id}", (int id) =>
- {
-    ServiceTicket ticketToDelete = serviceTickets.FirstOrDefault(st => st.Id == id);
-    if (ticketToDelete != null)
+app.MapPost("/servicetickets/{id}/complete", (int id) =>
+{
+    ServiceTicket ticketToComplete = serviceTickets.FirstOrDefault(st => st.Id == id);
+    if (ticketToComplete != null)
     {
-        serviceTickets.Remove(ticketToDelete);
+        ticketToComplete.DateComplete = DateTime.Today;
     }
- });
-
-// UPDATE Service Ticket
+});
 
 app.MapPut("/servicetickets/{id}", (int id, ServiceTicket serviceTicket) =>
 {
@@ -145,5 +132,72 @@ app.MapPut("/servicetickets/{id}", (int id, ServiceTicket serviceTicket) =>
     serviceTickets[ticketIndex] = serviceTicket;
     return Results.Ok();
 });
+
+app.MapDelete("/serviceticketdelete/{id}", (int id) =>
+ {
+    ServiceTicket ticketToDelete = serviceTickets.FirstOrDefault(st => st.Id == id);
+    if (ticketToDelete != null)
+    {
+        serviceTickets.Remove(ticketToDelete);
+    }
+ });
+
+ app.MapGet("/emergencytickets", () => // #1 EMERGENCY TICKETS
+{
+    IEnumerable<ServiceTicket> emergencyTickets = serviceTickets.Where(st => st.Emergency == true);
+    if (!emergencyTickets.Any())
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(emergencyTickets);
+});
+
+ app.MapGet("/unassignedtickets", () => //#2 UNASSIGNED TICKETS
+{
+    IEnumerable<ServiceTicket> unassignedTickets = serviceTickets.Where(st => st.EmployeeId == null);
+    if (!unassignedTickets.Any())
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(unassignedTickets);
+});
+
+app.MapGet("/inactivecustomers", () => // #3 INACTIVE CUSTOMERS
+{
+    DateTime oneYearAgo = DateTime.Now.AddYears(-1);
+
+    var inactiveCustomers = serviceTickets
+        .GroupBy(st => st.CustomerId) 
+        .Select(group =>
+        {
+            DateTime? mostRecentCompletionDate = group.Max(st => st.DateComplete);
+            return new
+            {
+                CustomerId = group.Key,
+                MostRecentCompletionDate = mostRecentCompletionDate
+            };
+        })
+        .Where(customerData => customerData.MostRecentCompletionDate < oneYearAgo)
+        .Select(customerData => customerData.CustomerId)
+        .ToList();
+    return Results.Json(inactiveCustomers);
+});
+
+app.MapGet("/inactiveemployees", () =>
+{
+    var employeesWithIncompleteTickets = serviceTickets
+        .Where(st => !st.DateComplete.HasValue)
+        .Select(st => st.EmployeeId)
+        .Distinct()
+        .ToList();
+
+    var inactiveEmployees = employees
+        .Where(emp => !employeesWithIncompleteTickets.Contains(emp.Id))
+        .ToList();
+
+    return Results.Json(inactiveEmployees);
+});
+
+
 
 app.Run();

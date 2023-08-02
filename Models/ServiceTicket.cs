@@ -11,7 +11,11 @@ public class ServiceTicket
 
     public bool? Emergency { get; set; }
 
-    public string DateComplete { get; set; }
+    public DateTime? DateComplete { get; set; } = default!;
+        public ServiceTicket()
+    {
+        DateComplete = null; // or any other initial value you prefer
+    }
 
     public Employee Employee { get; set; }
 
