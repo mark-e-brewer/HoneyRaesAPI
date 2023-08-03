@@ -18,15 +18,17 @@ List<Customer> customers = new List<Customer>
 List<Employee> employees = new List<Employee> 
 {
     new Employee { Id = 1, Name = "John", Specialty = "he fast" },
-    new Employee { Id = 2, Name = "Bobbi", Specialty = "she strong" }
+    new Employee { Id = 2, Name = "Bobbi", Specialty = "she strong" },
+    new Employee { Id = 3, Name = "Marky", Specialty = "good yes" }
 };
 
 List<ServiceTicket> serviceTickets = new List<ServiceTicket> 
+
 {
-    new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 1, Description = "Help Mark go fast", Emergency = false },
-    new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 2, Description = "help Alexis get strong", Emergency = true, DateComplete = DateTime.Today.AddYears(-2)},
-    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 2, Description = "help Mark get strong", Emergency = false, DateComplete = DateTime.Today.AddYears(-2)},
-    new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 1, Description = "help Alexis go fast", Emergency = false, DateComplete = DateTime.Today},
+    new ServiceTicket { Id = 1, CustomerId = 1, EmployeeId = 3, Description = "Help Mark go fast", Emergency = false },
+    new ServiceTicket { Id = 2, CustomerId = 2, EmployeeId = 3, Description = "help Alexis get strong", Emergency = true, DateComplete = DateTime.Today},
+    new ServiceTicket { Id = 3, CustomerId = 1, EmployeeId = 3, Description = "help Mark get strong", Emergency = false, DateComplete = DateTime.Today},
+    new ServiceTicket { Id = 4, CustomerId = 2, EmployeeId = 3, Description = "help Alexis go fast", Emergency = false, DateComplete = new DateTime(2023, 07, 29)},
     new ServiceTicket { Id = 5, CustomerId = 3, Description = "help Kilo not be stinky", Emergency = true, DateComplete = DateTime.Today}
 };
 
@@ -198,6 +200,50 @@ app.MapGet("/inactiveemployees", () =>
     return Results.Json(inactiveEmployees);
 });
 
+app.MapGet("/employeescustomers", () => //#5 CUSTOMERS WITH EMPLOYEES ASSIGNED TO THEM (opened & closed tickets)
+{
+    var customersWithEmployees = serviceTickets
+        .Where(st => st.EmployeeId.HasValue)
+        .Select(st => st.CustomerId)
+        .Distinct()
+        .ToList();
+        
+    return Results.Json(customersWithEmployees);
+});
 
+app.MapGet("/employeeofmonth", () => //#6 EMPLOYEE OF MONTH 
+{
+    DateTime today = DateTime.Today;
+    DateTime firstDayOfLastMonth = new DateTime(today.Year, today.Month - 1, 1);
+    DateTime lastDayOfLastMonth = new DateTime(today.Year, today.Month, 1).AddDays(-1);
+    var completedLastMonth = serviceTickets
+        .Where(st => st.DateComplete >= firstDayOfLastMonth && st.DateComplete <= lastDayOfLastMonth);
+
+    var employeeTicketCounts = completedLastMonth
+        .GroupBy(st => st.EmployeeId)
+        .Select(group => new
+        {
+            EmployeeId = group.Key, 
+            TicketCount = group.Count()
+        });
+
+    int? mostCompletedEmployeeId = employeeTicketCounts
+        .OrderByDescending(e => e.TicketCount)
+        .Select(e => e.EmployeeId)
+        .FirstOrDefault();
+
+    Employee mostCompletedEmployee = employees.FirstOrDefault(emp => emp.Id == mostCompletedEmployeeId);
+    return Results.Json(mostCompletedEmployee);
+});
+
+app.MapGet("/completedtickets", () => //#7 COMPLETE TICKETS IN ORDER
+{
+    var completedTickets = serviceTickets
+        .Where(st => st.DateComplete != null)
+        .OrderBy(st => st.DateComplete)
+        .ToList();
+
+    return Results.Json(completedTickets);
+});
 
 app.Run();
