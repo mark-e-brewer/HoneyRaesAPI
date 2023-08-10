@@ -246,4 +246,15 @@ app.MapGet("/completedtickets", () => //#7 COMPLETE TICKETS IN ORDER
     return Results.Json(completedTickets);
 });
 
+app.MapGet("/prioritizedtickets", () => //#8 (Challange) Prioritize tickets
+{
+    var prioritizedTickets = serviceTickets
+        .Where(st => !st.DateComplete.HasValue)
+        .OrderByDescending(st => st.Emergency)
+        .ThenBy(st => st.EmployeeId == null)
+        .ToList();
+
+    return Results.Json(prioritizedTickets);
+});
+
 app.Run();
